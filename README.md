@@ -95,7 +95,7 @@ fastapi_parser/
 ### 1. Клонируйте репозиторий и перейдите в директорию проекта:
 
 ```bash
-git clone https://https://github.com/KirillShapovalov/fastapi_parser
+git clone https://github.com/KirillShapovalov/fastapi_parser.git
 cd fastapi_parser
 ```
 
