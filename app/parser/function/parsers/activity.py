@@ -10,7 +10,7 @@ SEMAPHORE = asyncio.Semaphore(SEMAPHORE_LIMIT)
 
 
 # запрос для получения активности по репозиториям
-async def parse_activity_data(db_pool):
+async def parse_activity_data(db_pool, client):
     if db_pool is None:
         logger.error("Database connection pool is not initialized.")
         return
@@ -26,7 +26,7 @@ async def parse_activity_data(db_pool):
 
             # создание задач для обработки каждого репозитория
             tasks = [
-                limited_fetch(db_pool, repo_info["repo_id"], repo_info["owner"], repo_info["repo"].split("/")[-1], SEMAPHORE)
+                limited_fetch(db_pool, repo_info["repo_id"], repo_info["owner"], repo_info["repo"].split("/")[-1], SEMAPHORE, client)
                 for repo_info in top_repos
             ]
             await asyncio.gather(*tasks)
@@ -43,17 +43,17 @@ async def fetch_top100_repos_with_ids(conn):
 
 
 # создание запроса к api с учетом лимита и последующее сохранение
-async def limited_fetch(db_pool, repo_id, owner, repo, semaphore):
+async def limited_fetch(db_pool, repo_id, owner, repo, semaphore, client):
     async with semaphore:
-        activity_data = await fetch_repo_activity(owner, repo)
+        activity_data = await fetch_repo_activity(owner, repo, client)
         if activity_data:
             await save_activity_to_db(db_pool, repo_id, activity_data)
 
 
 # запрос к github api для получения активности по коммитам с заданными owner и repo из существующих данных в top100
-async def fetch_repo_activity(owner, repo):
+async def fetch_repo_activity(owner, repo, client):
     url = f"{GITHUB_API_URL}/repos/{owner}/{repo}/activity"
-    response = await fetch_from_github(url)
+    response = await fetch_from_github(url, client)
     return await process_activity_response(response) if response else None
 
 

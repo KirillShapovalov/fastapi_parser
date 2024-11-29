@@ -1,6 +1,7 @@
 import os
 import logging
 
+from fastapi import Request
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2 import OperationalError
 
@@ -16,15 +17,18 @@ DATABASE_CONFIG = {
 }
 
 # инициализация пула соединений
-try:
-    db_pool = SimpleConnectionPool(minconn=1, maxconn=5, **DATABASE_CONFIG)
-    logger.info("Database connection pool created successfully.")
-except OperationalError as e:
-    logger.critical("Error creating database connection pool: %s", e)
-    raise SystemExit("Failed to initialize database connection pool. Application exiting.")
+def init_db_pool():
+    try:
+        db_pool = SimpleConnectionPool(minconn=1, maxconn=5, **DATABASE_CONFIG)
+        logger.info("Database connection pool created successfully.")
+        return db_pool
+    except OperationalError as e:
+        logger.critical("Error creating database connection pool: %s", e)
+        raise SystemExit("Failed to initialize database connection pool. Application exiting.")
 
 
-async def get_db_connection():
+async def get_db_connection(request: Request):
+    db_pool = request.app.state.db_pool
     if not db_pool:
         raise RuntimeError("Database connection pool is not initialized.")
     conn = None

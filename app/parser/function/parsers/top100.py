@@ -3,12 +3,12 @@ from function.utils.logger import logger
 
 
 # запрос для получения top100 данных
-async def parse_top100_data(db_pool):
+async def parse_top100_data(db_pool, client):
     if db_pool is None:
         logger.error("Database connection pool is not initialized.")
         return
     url = f"{GITHUB_API_URL}/search/repositories?q=stars:>0&sort=stars&per_page=100"
-    data = await fetch_from_github(url)
+    data = await fetch_from_github(url, client)
     if data:
         await insert_top100_data_to_db(db_pool, data["items"])
 
@@ -40,14 +40,14 @@ async def insert_top100_data_to_db(db_pool, data):
             for idx, repo in enumerate(data, start=1):
                 position_prev = position_map.get(repo["full_name"], None)
                 await conn.execute(upsert_query,
-                    repo["full_name"],
-                    repo["owner"]["login"],
-                    idx,
-                    position_prev,
-                    repo["stargazers_count"],
-                    repo["watchers_count"],
-                    repo["forks_count"],
-                    repo["open_issues_count"],
-                    repo["language"]
-                )
+                                   repo["full_name"],
+                                   repo["owner"]["login"],
+                                   idx,
+                                   position_prev,
+                                   repo["stargazers_count"],
+                                   repo["watchers_count"],
+                                   repo["forks_count"],
+                                   repo["open_issues_count"],
+                                   repo["language"]
+                                   )
             logger.info(f"Inserted or updated {len(data)} records in top100 table.")

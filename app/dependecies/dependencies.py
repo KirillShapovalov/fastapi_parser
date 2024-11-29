@@ -1,5 +1,4 @@
 import logging
-from contextlib import asynccontextmanager
 
 from fastapi import HTTPException, Depends
 import psycopg2
@@ -43,12 +42,3 @@ class CoreDependencies:
         self.db = db
         self.logger = logger
         self.error_handler = error_handler
-
-
-@asynccontextmanager
-async def manage_db_connection(core_deps: CoreDependencies):
-    try:
-        yield core_deps.db
-    finally:
-        if core_deps.db:
-            core_deps.db.close()
