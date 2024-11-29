@@ -1,10 +1,8 @@
+from fastapi import HTTPException
 from psycopg2.extras import RealDictCursor
 
-from app.core.decorators import crud_error_handler
 
-
-@crud_error_handler
-async def get_top100_repos(db, logger, sort_by=None, order="asc"):
+async def get_top100_repos(db, sort_by=None, order="asc"):
     # базовый запрос
     query = "SELECT * FROM top100"
 
@@ -22,7 +20,6 @@ async def get_top100_repos(db, logger, sort_by=None, order="asc"):
         return cursor.fetchall()
 
 
-@crud_error_handler
 async def get_repo_activity(db, repo_owner, repo_name, since, until, logger):
     with db.cursor(cursor_factory=RealDictCursor) as cursor:
         # получаем repo_id для указанного repo_owner и repo_name
@@ -34,7 +31,8 @@ async def get_repo_activity(db, repo_owner, repo_name, since, until, logger):
 
         if not repo or "id" not in repo:
             logger.warning("Repository %s/%s not found in the database.", repo_owner, repo_name)
-            raise ValueError(f"Repository {repo_owner}/{repo_name} not found in the database.")
+            raise HTTPException(status_code=404,
+                                detail=f"Repository {repo_owner}/{repo_name} not found in the database.")
 
         repo_id = repo["id"]
         # теперь используем repo_id для выборки из таблицы activity
